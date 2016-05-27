@@ -1,8 +1,10 @@
 package com.biklom.wikia;
+
 import java.util.*;
 import org.apache.commons.lang3.*;
 
-public class Dungeon{
+public class Dungeon {
+
     public static final String CHAPTER = "chapter";
     public static final String CAMPAIGN = "campaign";
     public static final String DUNGEON = "dungeon";
@@ -18,44 +20,44 @@ public class Dungeon{
     public static final String RED_2_LEVEL = "red2_level";
     public static final String BONUS = "bonus";
     public static final String BONUS_LEVEL = "bonus_level";
-    
-    
-    public Dungeon(){
+
+    public Dungeon() {
         addData(BLUE_2, "");
         addData(BLUE_2_LEVEL, "");
         addData(RED_2, "");
-        addData(RED_2_LEVEL, "");        
+        addData(RED_2_LEVEL, "");
     }
-    
-    
-    
+
     private final Map<String, String> datas = new TreeMap<>();
-    
+
     public void addData(String name, String value) {
-        String v = StringUtils.defaultIfEmpty(value,"");
+        String v = StringUtils.defaultIfEmpty(value, "");
         datas.put(name, v);
     }
+
     public String getData(String key) {
         return datas.get(key);
     }
-    public String getCode(){
+
+    public String getCode() {
         return new StringBuilder("ch")
-        .append(getData(CHAPTER))
-        .append("_cp")
-        .append(getData(CAMPAIGN))
-        .append("_dg")
-        .append(getData(DUNGEON)).toString();
+                .append(getData(CHAPTER))
+                .append("_cp")
+                .append(getData(CAMPAIGN))
+                .append("_dg")
+                .append(getData(DUNGEON)).toString();
     }
+
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder().append("\t").append(getCode()).append(" = {\n");
         sb.append("\t\tcode=\"").append(getCode()).append("\",\n");
         datas.entrySet()
                 .stream()
                 .forEach((e) -> {
-            sb.append("\t\t").append(e.getKey()).append("=\"").append(e.getValue()).append("\",\n");
-        });
-        
+                    sb.append("\t\t").append(e.getKey()).append("=\"").append(e.getValue()).append("\",\n");
+                });
+
         return sb.append("\t},\n").toString();
     }
 }
