@@ -1,5 +1,8 @@
 package com.biklom.wikia;
 
+import com.biklom.wikia.objects.Unit;
+import com.biklom.wikia.objects.Dungeon;
+import com.biklom.wikia.objects.Skill;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -215,9 +218,9 @@ public class DataExtractor {
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row aRow = sheet.getRow(i);
             Skill aSkill = new Skill();
-            aSkill.name = getCellStringValue(aRow.getCell(0));
-            aSkill.description = getCellStringValue(aRow.getCell(1));
-            skills.put(aSkill.name.toLowerCase(), aSkill);
+            aSkill.setName(getCellStringValue(aRow.getCell(0)));
+            aSkill.setDescription(getCellStringValue(aRow.getCell(1)));
+            skills.put(aSkill.getName().toLowerCase(), aSkill);
         }
         return skills;
     }
@@ -286,10 +289,9 @@ public class DataExtractor {
     private void ajustSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills, String skillCategory) {
         mapUnitByCode.values().stream().forEach((u) -> {
             String s = u.getData(skillCategory).toLowerCase();
-            //System.out.println("s : "+s);
             if (StringUtils.isNotEmpty(s)) {
                 if (skills.get(s) != null) {
-                    skills.get(s).usedby.add(u.getElementNCode());
+                    skills.get(s).addUsedby(u.getElementNCode());
                 } else {
                     System.err.println("Unknown skill : " + s + " for unit : " + u.getElementNCode() + " ; skill cat : " + skillCategory);
                 }

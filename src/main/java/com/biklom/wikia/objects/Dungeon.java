@@ -1,4 +1,4 @@
-package com.biklom.wikia;
+package com.biklom.wikia.objects;
 
 import java.util.*;
 import org.apache.commons.lang3.*;

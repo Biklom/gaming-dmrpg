@@ -1,5 +1,6 @@
-package com.biklom.wikia;
+package com.biklom.wikia.objects;
 
+import com.biklom.wikia.objects.Dungeon;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -7,7 +8,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import org.apache.commons.lang3.*;
 
-class Unit {
+public class Unit {
 
     public static final String UNIT_CODE = "codename";
     public static final String UNIT_ELEMENT = "element";

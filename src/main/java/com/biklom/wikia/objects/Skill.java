@@ -1,4 +1,4 @@
-package com.biklom.wikia;
+package com.biklom.wikia.objects;
 
 import java.util.*;
 import org.apache.commons.lang3.Validate;
@@ -6,19 +6,19 @@ import org.apache.commons.lang3.Validate;
 public class Skill {
     
     /** Match the ID column from "Skill Names" tab. */
-    String internalCode; 
+    private String internalCode; 
     /** Match the english name of skill. */
-    String name;
+    private String name;
     /** Match technical description with placeholders. */
-    String description;
+    private String description;
     /** translated descriptions with placeholders replacement. Languages code in lowercase. */
-    Map<String, String> translatedDesc = new HashMap<>();
+    private Map<String, String> translatedDesc = new HashMap<>();
     /** Names in supported languages. Languages code in lowercase. */
-    Map<String, String> translatedNames = new HashMap<>();
+    private Map<String, String> translatedNames = new HashMap<>();
     /** List of units using this skill. */
-    Set<String> usedby = new TreeSet<>();
+    private Set<String> usedby = new TreeSet<>();
     /** map of placeholders and associated values. */
-    Map<String,String> placeholders2Values = new HashMap<>();
+    private Map<String,String> placeholders2Values = new HashMap<>();
     
     @Override
     public String toString() {
@@ -70,6 +70,64 @@ public class Skill {
         for (int i = Math.min(tok.size() , comm.size()); i>0;i--) {
             placeholders2Values.put(comm.get(i - 1), tok.get(i - 1));
         }
+    }
+
+    public String getInternalCode() {
+        return internalCode;
+    }
+
+    public void setInternalCode(String internalCode) {
+        this.internalCode = internalCode;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Map<String, String> getTranslatedDesc() {
+        return translatedDesc;
+    }
+
+    public void setTranslatedDesc(Map<String, String> translatedDesc) {
+        this.translatedDesc = translatedDesc;
+    }
+
+    public Map<String, String> getTranslatedNames() {
+        return translatedNames;
+    }
+
+    public void setTranslatedNames(Map<String, String> translatedNames) {
+        this.translatedNames = translatedNames;
+    }
+    
+    
+    
+    public Set<String> getUsedby() {
+        return usedby;
+    }
+
+    public void addUsedby(String unit) {
+        usedby.add(unit);
+    }
+
+    public Map<String,String> getPlaceholders2Values() {
+        return placeholders2Values;
+    }
+
+    public void setPlaceholders2Values(Map<String,String> placeholders2Values) {
+        this.placeholders2Values = placeholders2Values;
     }
     
 }
