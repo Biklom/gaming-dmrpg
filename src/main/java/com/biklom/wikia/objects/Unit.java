@@ -1,6 +1,5 @@
 package com.biklom.wikia.objects;
 
-import com.biklom.wikia.objects.Dungeon;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -9,7 +8,26 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.*;
 
 public class Unit {
+    
+    private String codeBasicSkill;
+    private String codeLeaderSkill;
 
+    public String getCodeBasicSkill() {
+        return codeBasicSkill;
+    }
+
+    public void setCodeBasicSkill(String codeBasicSkill) {
+        this.codeBasicSkill = codeBasicSkill;
+    }
+
+    public String getCodeLeaderSkill() {
+        return codeLeaderSkill;
+    }
+
+    public void setCodeLeaderSkill(String codeLeaderSkill) {
+        this.codeLeaderSkill = codeLeaderSkill;
+    }
+    
     public static final String UNIT_CODE = "codename";
     public static final String UNIT_ELEMENT = "element";
     public static final String UNIT_INITIATIVE = "initiative";
