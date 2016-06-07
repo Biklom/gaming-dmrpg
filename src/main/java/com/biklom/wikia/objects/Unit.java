@@ -1,33 +1,17 @@
 package com.biklom.wikia.objects;
 
+import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.*;
 
+
 public class Unit {
-    
-    private String codeBasicSkill;
-    private String codeLeaderSkill;
 
-    public String getCodeBasicSkill() {
-        return codeBasicSkill;
-    }
-
-    public void setCodeBasicSkill(String codeBasicSkill) {
-        this.codeBasicSkill = codeBasicSkill;
-    }
-
-    public String getCodeLeaderSkill() {
-        return codeLeaderSkill;
-    }
-
-    public void setCodeLeaderSkill(String codeLeaderSkill) {
-        this.codeLeaderSkill = codeLeaderSkill;
-    }
-    
     public static final String UNIT_CODE = "codename";
     public static final String UNIT_ELEMENT = "element";
     public static final String UNIT_INITIATIVE = "initiative";
@@ -37,52 +21,60 @@ public class Unit {
     public static final String SKILL_BASIC = "skillname";
     public static final String SKILL_LEADER = "leaderskillname";
 
+    @Getter @Setter private String codeBasicSkill;
+    @Getter @Setter private String codeLeaderSkill;
+    @Getter @Setter private String wikiBasicSkill;
+    @Getter @Setter private String wikiLeaderSkill;
+    @Getter @Setter private String codename;
+    @Getter @Setter private String maxlevel;
+    @Getter @Setter private String maxxp;
+    @Getter @Setter private String mindp;
+    @Getter @Setter private String maxdp;
+    @Getter @Setter private String minhp;
+    @Getter @Setter private String maxhp;
+    @Getter @Setter private String skillcharge;
+    @Getter @Setter private String rarity;
+    @Getter @Setter private String power;
+    @Getter @Setter private String morphsinto;
+    @Getter @Setter private String morphsfrom;
+    @Getter @Setter private String speed;
+    @Getter @Setter private String material1;
+    @Getter @Setter private String material2;
+    @Getter @Setter private String material3;
+
+    @Getter private String element;
+    @Getter private String bestiaryslot;
+    @Getter private String initiative;
+
     private final Set<String> foundsIn = new TreeSet<>();
     private final Set<String> usedBy = new TreeSet<>();
+    private final Map<String,String> names = new TreeMap<>();
 
-    private final Map<String, String> datas = new TreeMap<>();
-    private String element;
+    public Unit() {}
 
-    public Unit() {
+    public void setElement(String element) {
+        this.element = StringUtils.capitalize(element);
     }
 
+    public void setBestiarySlot(String bestiarySlot) {
+        this.bestiaryslot = StringUtils.leftPad(bestiarySlot, 3, "0");
+    }
+
+    public void setInitiative(String initiative) {
+        this.initiative = initiative.replaceAll(",", ".");
+    }
+    
     public String getElementNCode() {
-        return getElement() + "/" + getCodeName();
+        return element + "/" + codename;
     }
-
-    public String getData(String key) {
-        return datas.get(key);
-    }
-
-    public String getElement() {
-        return datas.get(UNIT_ELEMENT);
-    }
-
+    
     public String getEnglishName() {
-        return datas.get(UNIT_NAME_EN);
+        return names.get("en");
     }
 
-    public String getCodeName() {
-        return datas.get(UNIT_CODE);
+    public void addName(String language, String name){
+        names.put(language.toLowerCase(),name);
     }
-
-    public void addData(String name, String value) {
-        String v = StringUtils.defaultIfEmpty(value, "");
-        switch (name) {
-            case Unit.UNIT_ELEMENT:
-                v = StringUtils.capitalize(v);
-                break;
-            case Unit.UNIT_BESTIARY:
-                v = StringUtils.leftPad(v, 3, "0");
-                break;
-            default:
-        }
-
-        if (!name.toLowerCase().endsWith(SKILL_END_DESCRIPTION)) {
-            datas.put(name, v);
-        }
-    }
-
     public void addUsedBy(String unitCode, String elementName) {
         Validate.notEmpty(unitCode);
         Validate.notEmpty(elementName);
@@ -99,6 +91,8 @@ public class Unit {
                 .append(boxslot)
                 .append("@")
                 .append(level)
+                .append("@")
+                .append(dungeon.getData(Dungeon.MODE))
                 .toString());
     }
 
@@ -133,12 +127,32 @@ public class Unit {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\t\t").append(datas.get(UNIT_CODE)).append("={\n");
-        datas.entrySet()
+        sb.append("\t\t").append(codename).append("={\n");
+        sb.append("\t\t\t").append("bestiaryslot=\"").append(bestiaryslot).append("\",\n");
+        sb.append("\t\t\t").append("codename=\"").append(codename).append("\",\n");
+        sb.append("\t\t\t").append("element=\"").append(element).append("\",\n");
+        sb.append("\t\t\t").append("initiative=\"").append(initiative).append("\",\n");
+        sb.append("\t\t\t").append("leaderskillname=\"").append(wikiLeaderSkill).append("\",\n");
+        sb.append("\t\t\t").append("material1=\"").append(material1).append("\",\n");
+        sb.append("\t\t\t").append("material2=\"").append(material2).append("\",\n");
+        sb.append("\t\t\t").append("material3=\"").append(material3).append("\",\n");
+        sb.append("\t\t\t").append("maxdp=\"").append(maxdp).append("\",\n");
+        sb.append("\t\t\t").append("maxhp=\"").append(maxhp).append("\",\n");
+        sb.append("\t\t\t").append("maxlevel=\"").append(maxlevel).append("\",\n");
+        sb.append("\t\t\t").append("maxxp=\"").append(maxxp).append("\",\n");
+        sb.append("\t\t\t").append("mindp=\"").append(mindp).append("\",\n");
+        sb.append("\t\t\t").append("minhp=\"").append(minhp).append("\",\n");
+        sb.append("\t\t\t").append("morphsfrom=\"").append(morphsfrom).append("\",\n");
+        sb.append("\t\t\t").append("morphsinto=\"").append(morphsinto).append("\",\n");
+        names.entrySet()
                 .stream()
                 .forEach((e) -> {
-                    sb.append("\t\t\t").append(e.getKey()).append("=\"").append(e.getValue()).append("\",\n");
+                    sb.append("\t\t\t").append("name").append(e.getKey().toLowerCase(Locale.ENGLISH)).append("=\"").append(e.getValue()).append("\",\n");
                 });
+        sb.append("\t\t\t").append("power=\"").append(power).append("\",\n");
+        sb.append("\t\t\t").append("rarity=\"").append(rarity).append("\",\n");
+        sb.append("\t\t\t").append("skillcharge=\"").append(skillcharge).append("\",\n");
+        sb.append("\t\t\t").append("skillname=\"").append(wikiBasicSkill).append("\",\n");
         sb.append("\t\t\tusedby = {\n");
         usedBy.stream().forEach((e) -> {
             sb.append("\t\t\t\t\"").append(e).append("\",\n");
@@ -151,32 +165,5 @@ public class Unit {
         sb.append("\t\t\t},\n");
         sb.append("\t\t},\n");
         return sb.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 79 * hash + Objects.hashCode(this.datas);
-        hash = 79 * hash + Objects.hashCode(this.element);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Unit other = (Unit) obj;
-        if (!Objects.equals(this.element, other.element)) {
-            return false;
-        }
-
-        return Objects.equals(this.datas, other.datas);
     }
 }

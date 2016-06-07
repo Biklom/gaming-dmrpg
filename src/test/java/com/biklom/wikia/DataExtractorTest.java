@@ -4,8 +4,9 @@ public class DataExtractorTest {
 
     @org.junit.Test
     public void testGenerateData() {
-        String data = "F:\\dungeon monsters rpg\\Dungeon Monsters parameters for sending_updated_20160503.xlsx";
-        String output = "F:\\dungeon monsters rpg\\csv_wiki";
+        String data = "C:\\workspaces\\test_dmrpg.xlsx";
+        data = "C:\\workspaces\\Unit Showcase.xlsx";
+        String output = "C:\\workspaces\\csv_wiki";
         DataExtractor instance = new DataExtractor(data, output);
         instance.generateData();
     }

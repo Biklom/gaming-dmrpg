@@ -11,6 +11,8 @@ public class Skill {
     private String name;
     /** Match technical description with placeholders. */
     private String description;
+    /** translated descriptions without placeholders replacement. Languages code in lowercase. */
+    private final Map<String, String> translatedDescWithPH = new HashMap<>();
     /** translated descriptions with placeholders replacement. Languages code in lowercase. */
     private Map<String, String> translatedDesc = new HashMap<>();
     /** Names in supported languages. Languages code in lowercase. */
@@ -19,6 +21,8 @@ public class Skill {
     private Set<String> usedby = new TreeSet<>();
     /** map of placeholders and associated values. */
     private Map<String,String> placeholders2Values = new HashMap<>();
+    
+    
     
     @Override
     public String toString() {
@@ -48,8 +52,13 @@ public class Skill {
     private String makeCode() {
         return name.replaceAll("[' \\-]", "_").replaceAll("__+", "_");
     }
-    
     public void addPHDescription (String lang, String desc) {
+        translatedDescWithPH.put(lang.toLowerCase(),desc);
+    }
+    public String getPHDescription(String lang) {
+        return translatedDescWithPH.get(lang.toLowerCase());
+    }
+    public void addAndTransformDescription (String lang, String desc) {
         Validate.notEmpty(desc);
         String s = desc;
         for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
@@ -128,6 +137,10 @@ public class Skill {
 
     public void setPlaceholders2Values(Map<String,String> placeholders2Values) {
         this.placeholders2Values = placeholders2Values;
+    }
+    
+    public void addName(String lang, String name) {
+        translatedNames.put(lang.toLowerCase(),name);
     }
     
 }
