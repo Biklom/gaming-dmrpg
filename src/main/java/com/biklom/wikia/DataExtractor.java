@@ -270,18 +270,22 @@ public class DataExtractor {
                 Row aRow = sheet.getRow(i);
                 Skill aSkill = new Skill();                
                 aSkill.setInternalCode(getCellStringValue(aRow.getCell(0)));
-                aSkill.addName("fr", getCellStringValue(aRow.getCell(1)));
-                aSkill.addName("en", getCellStringValue(aRow.getCell(2)));
-                aSkill.addName("it", getCellStringValue(aRow.getCell(3)));
-                aSkill.addName("es", getCellStringValue(aRow.getCell(4)));
-                aSkill.addName("de", getCellStringValue(aRow.getCell(5)));
-                aRow = sheet.getRow(i+1);
-                aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
-                aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
-                aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
-                aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
-                aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));                
-                skills.put(aSkill.getInternalCode(), aSkill);
+                String s = getCellStringValue(aRow.getCell(1));
+                System.out.println("@"+getCellStringValue(aRow.getCell(1))+"@");
+                if( StringUtils.isNotEmpty(s)) {
+                    aSkill.addName("fr", getCellStringValue(aRow.getCell(1)));
+                    aSkill.addName("en", getCellStringValue(aRow.getCell(2)));
+                    aSkill.addName("it", getCellStringValue(aRow.getCell(3)));
+                    aSkill.addName("es", getCellStringValue(aRow.getCell(4)));
+                    aSkill.addName("de", getCellStringValue(aRow.getCell(5)));
+                    aRow = sheet.getRow(i+1);
+                    aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
+                    aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
+                    aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
+                    aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
+                    aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));                
+                    skills.put(aSkill.getInternalCode(), aSkill);
+                }
             }
         }
         return skills;
