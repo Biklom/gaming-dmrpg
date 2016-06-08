@@ -28,7 +28,7 @@ public class Skill {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\t").append(makeCode()).append(" = {\n");
-        sb.append("\t\tenglishname = \"").append(name).append("\",\n");
+        sb.append("\t\tenglishname = \"").append(getTranslatedName("en")).append("\",\n");
         sb.append("\t\tdescription = \"").append(description).append("\",\n");
         sb.append("\t\tusedby = {\n");
         usedby.stream().forEach((u) -> {
@@ -50,7 +50,7 @@ public class Skill {
     }
 
     private String makeCode() {
-        return name.replaceAll("[' \\-]", "_").replaceAll("__+", "_");
+        return getTranslatedName("en").replaceAll("[' \\-]", "_").replaceAll("__+", "_");
     }
     public void addPHDescription (String lang, String desc) {
         translatedDescWithPH.put(lang.toLowerCase(),desc);
@@ -143,4 +143,7 @@ public class Skill {
         translatedNames.put(lang.toLowerCase(),name);
     }
     
+    public String getTranslatedName(String lang) {
+        return translatedNames.get(lang);
+    }
 }

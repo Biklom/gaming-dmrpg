@@ -20,9 +20,9 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 public class DataExtractor {
 
     private static final String SHEET_UNITS = "All monsters";
-    private static final String SHEET_UNITS_NAMES = "Monsters Names";
+    private static final String SHEET_UNITS_NAMES = "Monster Names";
     private static final String SHEET_DUNGEONS = "Dungeons";
-    
+
     private static final String SHEET_SKILLS_NAMES = "Skill Names";
     private static final String SHEET_SKILLS_STATS = "Skills Stats";
     private static final String SHEET_SKILLS_BASIC = "Skills";
@@ -62,11 +62,13 @@ public class DataExtractor {
             Map<String, Skill> basicSkills = generateOneCategorySkill(workbook.getSheet(SHEET_SKILLS_BASIC));
             Map<String, Skill> leaderSkills = generateOneCategorySkill(workbook.getSheet(SHEET_SKILLS_LEADER));
             Map<String, Skill> skillsNames = generateSkillDesc(workbook.getSheet(SHEET_SKILLS_NAMES));
-            Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS));
+            Map<String, String[]> unitsNames = generateUnitsNames(workbook.getSheet(SHEET_UNITS_NAMES));
+            Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS), unitsNames);
+
             Map<String, Unit> mapUnitByCode = getMapUnitByCodeOrENName(units);
             ajustAllUnitsCrossing(mapUnitByCode);
-            ajustSkills(mapUnitByCode, skillsNames, Unit.SKILL_BASIC);
-            ajustSkills(mapUnitByCode, skillsNames, Unit.SKILL_LEADER);
+            ajustBasicSkills(mapUnitByCode, skillsNames);
+            ajustLeaderSkills(mapUnitByCode, skillsNames);
             List<Dungeon> dungeons = generateDungeonsData(workbook.getSheet(SHEET_DUNGEONS), mapUnitByCode);
             dumpUnitsToFile(units);
             dumpDungeonToFile(dungeons);
@@ -88,7 +90,33 @@ public class DataExtractor {
         return map;
     }
 
-    public Map<String, List<Unit>> generateUnitsData(Sheet sheet) {
+    public Map<String, String[]> generateUnitsNames(Sheet sheet) {
+        System.out.println("generateUnitsNames.in, sheet : " + sheet);
+        Map<String, String[]> units = new HashMap<>();
+        if (sheet != null) {
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row unitRow = sheet.getRow(i);
+
+                if (unitRow == null) {
+                    continue;
+                }
+                String unitCode = getUnitCellValue(unitRow.getCell(0));
+                String[] names = new String[]{
+                    getUnitCellValue(unitRow.getCell(1)),
+                    getUnitCellValue(unitRow.getCell(2)),
+                    getUnitCellValue(unitRow.getCell(3)),
+                    getUnitCellValue(unitRow.getCell(4)),
+                    getUnitCellValue(unitRow.getCell(5))
+                };
+                System.out.println(unitCode + " <=> " + names);
+                units.put(unitCode, names);
+            }
+        }
+        System.out.println("generateUnitsNames.out");
+        return units;
+    }
+
+    public Map<String, List<Unit>> generateUnitsData(Sheet sheet, Map<String, String[]> unitsNames) {
         Map<String, List<Unit>> units = new HashMap<>();
         if (sheet == null) {
             return units;
@@ -100,11 +128,24 @@ public class DataExtractor {
                 continue;
             }
             Unit u = analyzeUnitRow(unitRow);
+            updateNames(unitsNames, u);
             List<Unit> eltList = units.getOrDefault(u.getElement(), new ArrayList<>());
             units.putIfAbsent(u.getElement(), eltList);
             eltList.add(u);
         }
         return units;
+    }
+
+    private void updateNames(Map<String, String[]> unitsNames, Unit u) {
+        String[] names = unitsNames.get(u.getCodename());
+        System.out.println("updating names for [" + u.getCodename() + "]  with {" + names + "}");
+        if (names != null) {
+            u.addName("fr", names[0]);
+            u.addName("en", names[1]);
+            u.addName("it", names[2]);
+            u.addName("es", names[3]);
+            u.addName("de", names[4]);
+        }
     }
 
     public String getUnitCellValue(Cell c) {
@@ -213,25 +254,54 @@ public class DataExtractor {
 
     private List<Dungeon> generateDungeonsData(Sheet sheet, Map<String, Unit> units) {
         List<Dungeon> dungeons = new ArrayList<>();
-        if(sheet != null) {
-            Map<Integer, String> headerMap = extractHeaders(sheet.getRow(0));
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+        if (sheet != null) {
+            Row r = sheet.getRow(0);
+            System.out.println("R(0) nb cell  : " + r.getLastCellNum());
+            Map<Integer, String> headerMap = extractHeaders(sheet.getRow(1));
+            String mode = Dungeon.MODE_NORMAL;
+            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+
                 Row aRow = sheet.getRow(i);
                 if (aRow == null) {
                     continue;
                 }
+                if (aRow.getLastCellNum() < 2) {
+                    String m = getCellStringValue(aRow.getCell(0));
+                    mode = StringUtils.defaultIfEmpty(m, Dungeon.MODE_NORMAL).toLowerCase().replaceAll(" mode", "");
+                    continue;
+                }
+
+                if ("Chapter".equalsIgnoreCase(getCellStringValue(aRow.getCell(0)))) {
+                    continue;
+                }
+
                 Dungeon aDungeon = new Dungeon();
+                aDungeon.addData(Dungeon.MODE, mode);
+
                 Iterator<Cell> cellItr = aRow.cellIterator();
                 while (cellItr.hasNext()) {
                     Cell c = cellItr.next();
-                    String k = headerMap.get(c.getColumnIndex());
                     String v = getCellStringValue(c);
-                    switch (k) {
-                        case Dungeon.BLUE_1:
-                        case Dungeon.BLUE_2:
-                        case Dungeon.RED_1:
-                        case Dungeon.RED_2:
-                        case Dungeon.BONUS:
+                    String k = headerMap.get(c.getColumnIndex());
+                    switch (c.getColumnIndex()) {
+                        case 5:
+                            k = Dungeon.BLUE_1;
+                            addDungeonUnit(aDungeon, k, v, units);
+                            break;
+                        case 6:
+                            k = Dungeon.BLUE_2;
+                            addDungeonUnit(aDungeon, k, v, units);
+                            break;
+                        case 7:
+                            k = Dungeon.RED_1;
+                            addDungeonUnit(aDungeon, k, v, units);
+                            break;
+                        case 8:
+                            k = Dungeon.RED_2;
+                            addDungeonUnit(aDungeon, k, v, units);
+                            break;
+                        case 9:
+                            k = Dungeon.BONUS;
                             addDungeonUnit(aDungeon, k, v, units);
                             break;
                         default:
@@ -241,6 +311,7 @@ public class DataExtractor {
                 dungeons.add(aDungeon);
             }
         }
+
         return dungeons;
     }
 
@@ -259,31 +330,28 @@ public class DataExtractor {
         }
         return v;
     }
-    
-    
+
     public Map<String, Skill> generateSkillDesc(Sheet sheet) {
         Map<String, Skill> skills = new TreeMap<>();
-        
-        if(sheet != null) {
-            for (int i = 1; i < sheet.getLastRowNum()-2; i+=2) {
-                System.out.println("i : "+i);
+
+        if (sheet != null) {
+            for (int i = 1; i < sheet.getLastRowNum() - 2; i += 2) {
                 Row aRow = sheet.getRow(i);
-                Skill aSkill = new Skill();                
+                Skill aSkill = new Skill();
                 aSkill.setInternalCode(getCellStringValue(aRow.getCell(0)));
                 String s = getCellStringValue(aRow.getCell(1));
-                System.out.println("@"+getCellStringValue(aRow.getCell(1))+"@");
-                if( StringUtils.isNotEmpty(s)) {
+                if (StringUtils.isNotEmpty(s)) {
                     aSkill.addName("fr", getCellStringValue(aRow.getCell(1)));
                     aSkill.addName("en", getCellStringValue(aRow.getCell(2)));
                     aSkill.addName("it", getCellStringValue(aRow.getCell(3)));
                     aSkill.addName("es", getCellStringValue(aRow.getCell(4)));
                     aSkill.addName("de", getCellStringValue(aRow.getCell(5)));
-                    aRow = sheet.getRow(i+1);
+                    aRow = sheet.getRow(i + 1);
                     aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
                     aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
                     aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
                     aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
-                    aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));                
+                    aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));
                     skills.put(aSkill.getInternalCode(), aSkill);
                 }
             }
@@ -291,9 +359,10 @@ public class DataExtractor {
         return skills;
 
     }
+
     public Map<String, Skill> generateOneCategorySkill(Sheet sheet) {
         Map<String, Skill> skills = new TreeMap<>();
-        if(sheet != null) {
+        if (sheet != null) {
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row aRow = sheet.getRow(i);
                 Skill aSkill = new Skill();
@@ -316,8 +385,10 @@ public class DataExtractor {
         sb.append("}");
         try {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_dungeons.lua"), sb.toString(), "UTF-8");
+
         } catch (IOException ex) {
-            Logger.getLogger(DataExtractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DataExtractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -328,9 +399,9 @@ public class DataExtractor {
     }
 
     private void ajustOneUnit(Unit u, Map<String, Unit> mapUnitByCode) {
-        u.setMaterial1( ajustMaterial(u.getMaterial1(), mapUnitByCode, u));
-        u.setMaterial2( ajustMaterial(u.getMaterial2(), mapUnitByCode, u));
-        u.setMaterial3( ajustMaterial(u.getMaterial3(), mapUnitByCode, u));
+        u.setMaterial1(ajustMaterial(u.getMaterial1(), mapUnitByCode, u));
+        u.setMaterial2(ajustMaterial(u.getMaterial2(), mapUnitByCode, u));
+        u.setMaterial3(ajustMaterial(u.getMaterial3(), mapUnitByCode, u));
         ajustMorphsFrom(mapUnitByCode.get(u.getMorphsinto()), u);
     }
 
@@ -347,11 +418,11 @@ public class DataExtractor {
     private void ajustMorphsFrom(Unit morphsInto, Unit morphsFrom) {
         if (morphsFrom != null) {
             if (morphsInto != null) {
-                morphsInto.setMorphsfrom( morphsFrom.getElementNCode());
+                morphsInto.setMorphsfrom(morphsFrom.getElementNCode());
                 morphsFrom.addUsedBy(morphsInto.getCodename(), morphsInto.getElement());
             }
             if (StringUtils.isEmpty(morphsFrom.getMorphsfrom())) {
-                morphsFrom.setMorphsfrom(""); 
+                morphsFrom.setMorphsfrom("");
             }
         }
     }
@@ -366,22 +437,34 @@ public class DataExtractor {
         aDungeon.addData(boxType + "_level", level);
     }
 
-    private void ajustSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills, String skillCategory) {
-        boolean isBasic = "basic".equalsIgnoreCase(skillCategory);
-        mapUnitByCode.values().stream().forEach((u) -> {            
-            String s = (isBasic?u.getCodeBasicSkill():u.getCodeLeaderSkill());
-            System.out.println("skill : "+s);
+    private void ajustBasicSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills) {
+        mapUnitByCode.values().stream().forEach((u) -> {
+            String s =  u.getCodeBasicSkill();
+            System.out.println("Basic skill : "+s);
             if (StringUtils.isNotEmpty(s)) {
                 Skill sk = skills.get(s);
-                if ( sk != null) {
-                    if(isBasic) {
-                        u.setWikiBasicSkill(sk.getName());
-                    } else {
-                        u.setWikiLeaderSkill(sk.getName());
-                    }
+                System.out.println("Basic skill Obj: "+sk);
+                if (sk != null) {
+                    u.setWikiBasicSkill(sk.getTranslatedName("en"));
                     sk.addUsedby(u.getElementNCode());
                 } else {
-                    System.err.println("Unknown skill : " + s + " for unit : " + u.getElementNCode() + " ; skill cat : " + skillCategory);
+                    System.err.println("Unknown Basic skill : " + s + " for unit : " + u.getElementNCode());
+                }
+            }
+        });
+    }
+    private void ajustLeaderSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills) {
+        mapUnitByCode.values().stream().forEach((u) -> {
+            String s = u.getCodeLeaderSkill();
+            System.out.println("Leader skill : "+s);
+            if (StringUtils.isNotEmpty(s)) {
+                Skill sk = skills.get(s);
+                System.out.println("Leader skill obj: "+sk);
+                if (sk != null) {
+                    u.setWikiLeaderSkill(sk.getTranslatedName("en"));
+                    sk.addUsedby(u.getElementNCode());
+                } else {
+                    System.err.println("Unknown Leader skill : " + s + " for unit : " + u.getElementNCode());
                 }
             }
         });
@@ -398,8 +481,10 @@ public class DataExtractor {
         sb.append("}");
         try {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + category + ".lua"), sb.toString(), "UTF-8");
+
         } catch (IOException ex) {
-            Logger.getLogger(DataExtractor.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DataExtractor.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

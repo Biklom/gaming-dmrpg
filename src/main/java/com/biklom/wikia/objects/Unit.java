@@ -23,8 +23,8 @@ public class Unit {
 
     @Getter @Setter private String codeBasicSkill;
     @Getter @Setter private String codeLeaderSkill;
-    @Getter @Setter private String wikiBasicSkill;
-    @Getter @Setter private String wikiLeaderSkill;
+    @Getter @Setter private String wikiBasicSkill = "";
+    @Getter @Setter private String wikiLeaderSkill = "";
     @Getter @Setter private String codename;
     @Getter @Setter private String maxlevel;
     @Getter @Setter private String maxxp;
@@ -35,12 +35,12 @@ public class Unit {
     @Getter @Setter private String skillcharge;
     @Getter @Setter private String rarity;
     @Getter @Setter private String power;
-    @Getter @Setter private String morphsinto;
-    @Getter @Setter private String morphsfrom;
+    @Getter @Setter private String morphsinto = "";
+    @Getter @Setter private String morphsfrom = "";
     @Getter @Setter private String speed;
-    @Getter @Setter private String material1;
-    @Getter @Setter private String material2;
-    @Getter @Setter private String material3;
+    @Getter @Setter private String material1  = "";
+    @Getter @Setter private String material2 = "";
+    @Getter @Setter private String material3 = "";
 
     @Getter private String element;
     @Getter private String bestiaryslot;
