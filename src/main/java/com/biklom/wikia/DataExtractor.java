@@ -2,6 +2,7 @@ package com.biklom.wikia;
 
 import com.biklom.wikia.objects.Unit;
 import com.biklom.wikia.objects.Dungeon;
+import com.biklom.wikia.objects.SKILL_TYPE;
 import com.biklom.wikia.objects.Skill;
 import java.io.File;
 import java.io.IOException;
@@ -59,9 +60,8 @@ public class DataExtractor {
     public void generateData() {
         File file = new File(inputDataPath);
         try (Workbook workbook = WorkbookFactory.create(file)) {
-            Map<String, Skill> basicSkills = generateOneCategorySkill(workbook.getSheet(SHEET_SKILLS_BASIC));
-            Map<String, Skill> leaderSkills = generateOneCategorySkill(workbook.getSheet(SHEET_SKILLS_LEADER));
             Map<String, Skill> skillsNames = generateSkillDesc(workbook.getSheet(SHEET_SKILLS_NAMES));
+            updateSkillsDescs(workbook.getSheet(SHEET_SKILLS_STATS),skillsNames);
             Map<String, String[]> unitsNames = generateUnitsNames(workbook.getSheet(SHEET_UNITS_NAMES));
             Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS), unitsNames);
 
@@ -72,8 +72,8 @@ public class DataExtractor {
             List<Dungeon> dungeons = generateDungeonsData(workbook.getSheet(SHEET_DUNGEONS), mapUnitByCode);
             dumpUnitsToFile(units);
             dumpDungeonToFile(dungeons);
-            dumpSkillsToFile(basicSkills, "Basic");
-            dumpSkillsToFile(leaderSkills, "Leader");
+            dumpSkillsToFile(skillsNames, SKILL_TYPE.BASIC);
+            dumpSkillsToFile(skillsNames, SKILL_TYPE.LEADER);
         } catch (InvalidFormatException | IOException ioe) {
             Logger.getLogger(DataExtractor.class.getName()).log(Level.SEVERE, null, ioe);
         }
@@ -88,6 +88,25 @@ public class DataExtractor {
             }
         }
         return map;
+    }
+    public void updateSkillsDescs(Sheet sheet, Map<String, Skill> skills) {
+        if (sheet != null) {
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row aRow = sheet.getRow(i);
+
+                if (aRow == null) {
+                    continue;
+                }
+                String skillCode = getCellStringValue(aRow.getCell(0));
+                String descvalues = getCellStringValue(aRow.getCell(2));
+                Skill sk = skills.get(skillCode);
+                System.out.println("skillCode => "+skillCode+ " : sk = "+sk);
+                if(sk != null) {
+                    sk.initPlaceholders(sk.getPHDescription("en"), descvalues);
+                }
+            }
+            
+        }
     }
 
     public Map<String, String[]> generateUnitsNames(Sheet sheet) {
@@ -349,6 +368,7 @@ public class DataExtractor {
                     aRow = sheet.getRow(i + 1);
                     aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
                     aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
+                    aSkill.setDescription( getCellStringValue(aRow.getCell(2)));
                     aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
                     aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
                     aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));
@@ -470,7 +490,7 @@ public class DataExtractor {
         });
     }
 
-    private void dumpSkillsToFile(Map<String, Skill> skills, String category) {
+    private void dumpSkillsToFile(Map<String, Skill> skills, SKILL_TYPE category) {
         StringBuilder sb = new StringBuilder();
         sb.append("--[[\n\nBefore editing this page, please read :\n\n\t"
                 + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
@@ -480,7 +500,7 @@ public class DataExtractor {
         });
         sb.append("}");
         try {
-            FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + category + ".lua"), sb.toString(), "UTF-8");
+            FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + StringUtils.capitalize(category.name()) + ".lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
             Logger.getLogger(DataExtractor.class

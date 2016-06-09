@@ -12,11 +12,11 @@ public class Skill {
     /** Match technical description with placeholders. */
     private String description;
     /** translated descriptions without placeholders replacement. Languages code in lowercase. */
-    private final Map<String, String> translatedDescWithPH = new HashMap<>();
+    private final Map<String, String> translatedDescWithPH = new TreeMap<>();
     /** translated descriptions with placeholders replacement. Languages code in lowercase. */
-    private Map<String, String> translatedDesc = new HashMap<>();
+    private Map<String, String> translatedDesc = new TreeMap<>();
     /** Names in supported languages. Languages code in lowercase. */
-    private Map<String, String> translatedNames = new HashMap<>();
+    private Map<String, String> translatedNames = new TreeMap<>();
     /** List of units using this skill. */
     private Set<String> usedby = new TreeSet<>();
     /** map of placeholders and associated values. */
@@ -34,17 +34,17 @@ public class Skill {
         usedby.stream().forEach((u) -> {
             sb.append("\t\t\t\"").append(u).append("\",\n");
         });
-        sb.append("\t\t}\n");
+        sb.append("\t\t},\n");
         sb.append("\t\tnames = {\n");
         translatedNames.entrySet().stream().forEach((e) -> {
-            sb.append("\t\t\t").append(e.getKey()).append("\"").append(e.getValue()).append("\",\n");
+            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(e.getValue()).append("\",\n");
         });
-        sb.append("\t\t}\n");
-        sb.append("\t\tdescripptions = {\n");
-        translatedDesc.entrySet().stream().forEach((e) -> {
-            sb.append("\t\t\t").append(e.getKey()).append("\"").append(e.getValue()).append("\",\n");
+        sb.append("\t\t},\n");
+        sb.append("\t\tdescriptions = {\n");
+        translatedDescWithPH.entrySet().stream().forEach((e) -> {
+            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(transformDescription (e.getValue())).append("\",\n");
         });
-        sb.append("\t\t}\n");
+        sb.append("\t\t},\n");
         sb.append("\t},\n");
         return sb.toString();
     }
@@ -58,6 +58,7 @@ public class Skill {
     public String getPHDescription(String lang) {
         return translatedDescWithPH.get(lang.toLowerCase());
     }
+    
     public void addAndTransformDescription (String lang, String desc) {
         Validate.notEmpty(desc);
         String s = desc;
@@ -65,6 +66,14 @@ public class Skill {
             s = s.replace(e.getKey(), e.getValue());
         }
         translatedDesc.put( lang, s );
+    }
+    public String transformDescription (String desc) {
+        Validate.notEmpty(desc);
+        String s = desc;
+        for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
+            s = s.replace(e.getKey(), e.getValue());
+        }
+        return s;
     }
     
     public void initPlaceholders(String desc, String trad) {
