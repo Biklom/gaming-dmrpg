@@ -147,10 +147,12 @@ public class DataExtractor {
                 continue;
             }
             Unit u = analyzeUnitRow(unitRow);
-            updateNames(unitsNames, u);
-            List<Unit> eltList = units.getOrDefault(u.getElement(), new ArrayList<>());
-            units.putIfAbsent(u.getElement(), eltList);
-            eltList.add(u);
+            if( u != null) {
+                //updateNames(unitsNames, u);
+                List<Unit> eltList = units.getOrDefault(u.getElement(), new ArrayList<>());
+                units.putIfAbsent(u.getElement(), eltList);
+                eltList.add(u);
+            }
         }
         return units;
     }
@@ -172,29 +174,35 @@ public class DataExtractor {
     }
 
     public String getUnitCellValue(Cell c, boolean isFloat) {
-        String v;
-        switch (c.getCellType()) {
-            case Cell.CELL_TYPE_STRING:
-                v = c.getStringCellValue();
-                break;
-            case Cell.CELL_TYPE_NUMERIC:
-                if (isFloat) {
-                    v = String.valueOf(c.getNumericCellValue());
-                } else {
-                    v = String.valueOf((int) c.getNumericCellValue());
-                }
-                break;
-            default:
-                v = "";
-                break;
+        String v="";
+        if(c != null) {
+            switch (c.getCellType()) {
+                case Cell.CELL_TYPE_STRING:
+                    v = c.getStringCellValue();
+                    break;
+                case Cell.CELL_TYPE_NUMERIC:
+                    if (isFloat) {
+                        v = String.valueOf(c.getNumericCellValue());
+                    } else {
+                        v = String.valueOf((int) c.getNumericCellValue());
+                    }
+                    break;
+                default:
+                    v = "";
+                    break;
+            }
         }
         return v;
     }
 
     public Unit analyzeUnitRow(Row unitRow) {
+        String id = getUnitCellValue(unitRow.getCell(0));
+        if( StringUtils.isEmpty(id)) {
+            return null;
+        }
         Unit u = new Unit();
         // Bestiary
-        u.setBestiarySlot(getUnitCellValue(unitRow.getCell(0)));
+        u.setBestiarySlot(id);
         // CodeName
         u.setCodename(getUnitCellValue(unitRow.getCell(1)));
         // level
@@ -227,6 +235,24 @@ public class DataExtractor {
         u.setPower(getUnitCellValue(unitRow.getCell(15)));
         // evolve in
         u.setMorphsinto(getUnitCellValue(unitRow.getCell(16)));
+        // MorphRecipe1
+        u.setMaterial1(getUnitCellValue(unitRow.getCell(17)));
+        // MorphRecipe2
+        u.setMaterial2(getUnitCellValue(unitRow.getCell(18)));
+        // MorphRecipe3
+        u.setMaterial3(getUnitCellValue(unitRow.getCell(19)));
+        // name fr
+        u.addName("fr", getUnitCellValue(unitRow.getCell(20)));
+        // name en
+        u.addName("en", getUnitCellValue(unitRow.getCell(21)));
+        // it
+        u.addName("it", getUnitCellValue(unitRow.getCell(22)));
+        // es
+        u.addName("es", getUnitCellValue(unitRow.getCell(23)));
+        // de
+        u.addName("de", getUnitCellValue(unitRow.getCell(24)));
+
+        
 
         return u;
     }
@@ -500,7 +526,7 @@ public class DataExtractor {
         });
         sb.append("}");
         try {
-            FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + StringUtils.capitalize(category.name()) + ".lua"), sb.toString(), "UTF-8");
+            FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + StringUtils.capitalize(category.name().toLowerCase()) + ".lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
             Logger.getLogger(DataExtractor.class
