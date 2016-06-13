@@ -128,7 +128,7 @@ public class Unit {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\t\t").append(codename).append("={\n");
-        sb.append("\t\t\t").append("bestiaryslot=\"").append(bestiaryslot).append("\",\n");
+        sb.append("\t\t\t").append("bestiary=\"").append(bestiaryslot).append("\",\n");
         sb.append("\t\t\t").append("codename=\"").append(codename).append("\",\n");
         sb.append("\t\t\t").append("element=\"").append(element).append("\",\n");
         sb.append("\t\t\t").append("initiative=\"").append(initiative).append("\",\n");

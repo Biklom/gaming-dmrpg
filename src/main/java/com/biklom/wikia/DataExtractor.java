@@ -513,7 +513,9 @@ public class DataExtractor {
 
                 if (sk != null) {
                     u.setWikiBasicSkill(sk.getTranslatedName("en"));
-                    sk.addUsedby(u.getElementNCode());
+                    if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
+                        sk.addUsedby(u.getElementNCode());
+                    }
                 } else {
                     LOGGER.warn( "Unknown Basic skill : {} for unit : {}", s, u.getElementNCode());
                 }
@@ -530,7 +532,9 @@ public class DataExtractor {
 
                 if (sk != null) {
                     u.setWikiLeaderSkill(sk.getTranslatedName("en"));
-                    sk.addUsedby(u.getElementNCode());
+                    if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
+                        sk.addUsedby(u.getElementNCode());
+                    }
                 } else {
                     LOGGER.warn( "Unknown Leader skill : {} for unit : {}", s, u.getElementNCode());
                 }
