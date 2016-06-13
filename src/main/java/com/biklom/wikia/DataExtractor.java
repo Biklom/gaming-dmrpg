@@ -7,8 +7,6 @@ import com.biklom.wikia.objects.Skill;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.*;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -17,10 +15,12 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataExtractor {
 
-    private static final Logger LOGGER = Logger.getLogger(DataExtractor.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataExtractor.class);
     private static final String SHEET_UNITS = "All monsters";
     private static final String SHEET_UNITS_NAMES = "Monster Names";
     private static final String SHEET_DUNGEONS = "Dungeons";
@@ -75,13 +75,31 @@ public class DataExtractor {
             List<Dungeon> dungeons = generateDungeonsData(workbook.getSheet(SHEET_DUNGEONS), mapUnitByCode);
             dumpUnitsToFile(units);
             dumpDungeonToFile(dungeons);
-            dumpSkillsToFile(skillsNames, SKILL_TYPE.BASIC);
-            dumpSkillsToFile(skillsNames, SKILL_TYPE.LEADER);
+            List<Skill> namedSortedSkills = sortSkillsByEnName(skillsNames);
+            dumpSkillsToFile(namedSortedSkills, SKILL_TYPE.BASIC);
+            dumpSkillsToFile(namedSortedSkills, SKILL_TYPE.LEADER);
         } catch (InvalidFormatException | IOException ioe) {
-            LOGGER.log(Level.SEVERE, null, ioe);
+            LOGGER.error( null, ioe);
         }
     }
-
+    
+    public List<Skill> sortSkillsByEnName(Map<String, Skill> skillsMap) {
+        List<Skill> skills = new ArrayList<>();
+        skills.addAll(skillsMap.values());
+        Collections.sort(skills, new Comparator<Skill>() {
+            @Override
+            public int compare(Skill o1, Skill o2) {
+                if(o1 == null) {
+                    return -1;
+                }
+                if(o2 == null) {
+                    return 1;
+                }
+                return StringUtils.defaultIfEmpty(o1.getTranslatedName("en"),"").compareToIgnoreCase(StringUtils.defaultIfEmpty(o2.getTranslatedName("en"),""));
+            }
+        });
+        return skills;
+    }
     public Map<String, Unit> getMapUnitByCodeOrENName(Map<String, List<Unit>> units) {
         Map<String, Unit> map = new HashMap<>();
         for (List<Unit> l : units.values()) {
@@ -104,7 +122,7 @@ public class DataExtractor {
                 String skillCode = getCellStringValue(aRow.getCell(0));
                 String descvalues = getCellStringValue(aRow.getCell(2));
                 Skill sk = skills.get(skillCode);
-                LOGGER.log(Level.FINE, "skillCode => {0} : sk = {1}", new Object[]{skillCode, sk});
+                LOGGER.debug("skillCode => {} : sk = {}", skillCode, sk);
                 if (sk != null) {
                     sk.initPlaceholders(sk.getPHDescription("en"), descvalues);
                 }
@@ -114,7 +132,6 @@ public class DataExtractor {
     }
 
     public Map<String, String[]> generateUnitsNames(Sheet sheet) {
-        LOGGER.entering(getClass().getName(),"generateUnitsNames", sheet);
         Map<String, String[]> units = new HashMap<>();
         if (sheet != null) {
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -135,7 +152,6 @@ public class DataExtractor {
                 units.put(unitCode, names);
             }
         }
-        LOGGER.exiting(getClass().getName(),"generateUnitsNames", sheet);
         return units;
     }
 
@@ -163,7 +179,7 @@ public class DataExtractor {
 
     private void updateNames(Map<String, String[]> unitsNames, Unit u) {
         String[] names = unitsNames.get(u.getCodename());
-        LOGGER.log(Level.FINE, "updating names for [{0}]  with '{'{1}'}'", new Object[]{u.getCodename(), names});
+        LOGGER.debug("updating names for [{}]  with '{'{}'}'", u.getCodename(), names);
         if (names != null) {
             u.addName("fr", names[0]);
             u.addName("en", names[1]);
@@ -269,14 +285,14 @@ public class DataExtractor {
                 if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
                     sb.append(u.toString());
                 } else {
-                    LOGGER.log(Level.WARNING, "Skipping unit #{0} : {1}", new Object[]{u.getBestiaryslot(), u.getCodename()});
+                    LOGGER.info( "Skipping unit #{} : {}", u.getBestiaryslot(), u.getCodename());
                 }
             });
             sb.append("}");
             try {
                 FileUtils.writeStringToFile(new File(outputDir, "wikia_" + e.getKey() + ".lua"), sb.toString(), "UTF-8");
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
+                LOGGER.error("Error while writing units files : ", ex);
             }
         }
     }
@@ -307,7 +323,7 @@ public class DataExtractor {
         List<Dungeon> dungeons = new ArrayList<>();
         if (sheet != null) {
             Row r = sheet.getRow(0);
-            LOGGER.log(Level.FINE, "R(0) nb cell  : {0}", r.getLastCellNum());
+            LOGGER.debug("R(0) nb cell  : {}", r.getLastCellNum());
             Map<Integer, String> headerMap = extractHeaders(sheet.getRow(1));
             String mode = Dungeon.MODE_NORMAL;
             for (int i = 0; i <= sheet.getLastRowNum(); i++) {
@@ -439,7 +455,7 @@ public class DataExtractor {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_dungeons.lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+            LOGGER.error( null, ex);
         }
     }
 
@@ -499,7 +515,7 @@ public class DataExtractor {
                     u.setWikiBasicSkill(sk.getTranslatedName("en"));
                     sk.addUsedby(u.getElementNCode());
                 } else {
-                    LOGGER.log(Level.WARNING, "Unknown Basic skill : {0} for unit : {1}", new Object[]{s, u.getElementNCode()});
+                    LOGGER.warn( "Unknown Basic skill : {} for unit : {}", s, u.getElementNCode());
                 }
             }
         });
@@ -516,23 +532,23 @@ public class DataExtractor {
                     u.setWikiLeaderSkill(sk.getTranslatedName("en"));
                     sk.addUsedby(u.getElementNCode());
                 } else {
-                    LOGGER.log(Level.WARNING, "Unknown Leader skill : {0} for unit : {1}", new Object[]{s, u.getElementNCode()});
+                    LOGGER.warn( "Unknown Leader skill : {} for unit : {}", s, u.getElementNCode());
                 }
             }
         });
     }
 
-    private void dumpSkillsToFile(Map<String, Skill> skills, SKILL_TYPE category) {
+    private void dumpSkillsToFile(Collection< Skill> skills, SKILL_TYPE category) {
         StringBuilder sb = new StringBuilder();
         sb.append("--[[\n\nBefore editing this page, please read :\n\n\t"
                 + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
                 + "\n\nreturn {\n");
-        skills.values().stream().forEach((u) -> {
+        skills.stream().forEach((u) -> {
             if(SKILL_TYPE.findType(u.getInternalCode()) == category) {
                 if (u.isUsed()) {
                     sb.append(u.toString());
                 } else {
-                    LOGGER.log(Level.WARNING, "Ignoring unused skill [{0}]", u.getInternalCode());
+                    LOGGER.info( "Ignoring unused skill [{}]", u.getInternalCode());
                 }
             }
         });
@@ -541,7 +557,7 @@ public class DataExtractor {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + StringUtils.capitalize(category.name().toLowerCase()) + ".lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+            LOGGER.error( null, ex);
         }
     }
 }

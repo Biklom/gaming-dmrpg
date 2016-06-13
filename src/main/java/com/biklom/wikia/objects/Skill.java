@@ -2,9 +2,11 @@ package com.biklom.wikia.objects;
 
 import java.util.*;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Skill {
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(Skill.class);
     /** Match the ID column from "Skill Names" tab. */
     private String internalCode; 
     /** Match the english name of skill. */
@@ -62,10 +64,7 @@ public class Skill {
     
     public void addAndTransformDescription (String lang, String desc) {
         Validate.notEmpty(desc);
-        String s = desc;
-        for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
-            s = s.replace(e.getKey(), e.getValue());
-        }
+        String s = transformDescription(desc,lang);
         translatedDesc.put( lang, s );
     }
     public String transformDescription (String desc,String lang) {
@@ -74,15 +73,30 @@ public class Skill {
         for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
             s = s.replace(e.getKey(), e.getValue());
         }
-        if(s.indexOf("{")>-1) {
-            System.err.println("Incompleted translation for skill code ["+internalCode+"] / name ["+getTranslatedName("en")+"] in language ["+lang+"]");
+        if(s.contains("{")) {
+            LOGGER.warn("Incomplete translation for skill code [{}] / name [{}] in language [{}]",internalCode,getTranslatedName("en"),lang);
+            LOGGER.debug(desc);
+            LOGGER.debug(s);
+            List<String> tradSplit = splitStringAsArray(s);
+            tradSplit.stream().forEach(k -> {
+                if(k.startsWith("{")) {
+                    if(!placeholders2Values.containsKey(k)) {
+                        LOGGER.warn("missing key : {}",k);
+                    }
+                }
+            });
+
         }
         return s;
     }
+
+    private static List<String> splitStringAsArray(String s) {
+        return Arrays.asList(s.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
+    }
     
     public void initPlaceholders(String desc, String trad) {
-        List<String> descSplit = Arrays.asList(desc.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
-        List<String> tradSplit = Arrays.asList(trad.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
+        List<String> descSplit = splitStringAsArray(desc);
+        List<String> tradSplit = splitStringAsArray(trad);
         List<String> comm = new ArrayList<>();
         comm.addAll(descSplit);
         comm.removeAll(tradSplit);
