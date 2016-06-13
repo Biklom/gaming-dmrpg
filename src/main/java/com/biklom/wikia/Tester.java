@@ -17,6 +17,10 @@ import java.util.regex.*;
 public class Tester {
 
     public static void main(String[] args) {
+        testTRSkill();
+    }
+    
+    private static void test1() {
         Pattern pat = Pattern.compile("(.*) Lvl\\.(.*)");
         String u = "Fire/Zombie";
         System.out.println(u.replaceAll("(.*)/(.*)", "$2"));
@@ -34,7 +38,7 @@ public class Tester {
     }
 
     public static void testTRSkill() {
-        String desc = "Deals {action} Wood DP to a random foe for every attack you give.\\nLasts for {duration} attacks.";
+        String desc = "Deals {action}. Wood DP to a random foe for every attack you give.\\nLasts for {duration} attacks.";
         String trad = "Deals 200/500 Wood DP to a random foe for every attack you give. Lasts for 2/6 attacks.";
         List<String> descSplit = Arrays.asList(desc.replaceAll("\\\\n", " ").split("\\s"));
         List<String> tradSplit = Arrays.asList(trad.replaceAll("\\\\n", " ").split("\\s"));

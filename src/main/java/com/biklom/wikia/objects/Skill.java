@@ -29,7 +29,8 @@ public class Skill {
         StringBuilder sb = new StringBuilder();
         sb.append("\t").append(makeCode()).append(" = {\n");
         sb.append("\t\tenglishname = \"").append(getTranslatedName("en")).append("\",\n");
-        sb.append("\t\tdescription = \"").append(description).append("\",\n");
+        sb.append("\t\tdescription = \"").append(transformDescription (translatedDescWithPH.get("en"),"en")).append("\",\n");
+        sb.append("\t\ttechnical_description = \"").append(description).append("\",\n");
         sb.append("\t\tusedby = {\n");
         usedby.stream().forEach((u) -> {
             sb.append("\t\t\t\"").append(u).append("\",\n");
@@ -42,7 +43,7 @@ public class Skill {
         sb.append("\t\t},\n");
         sb.append("\t\tdescriptions = {\n");
         translatedDescWithPH.entrySet().stream().forEach((e) -> {
-            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(transformDescription (e.getValue())).append("\",\n");
+            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(transformDescription (e.getValue(),e.getKey())).append("\",\n");
         });
         sb.append("\t\t},\n");
         sb.append("\t},\n");
@@ -67,18 +68,21 @@ public class Skill {
         }
         translatedDesc.put( lang, s );
     }
-    public String transformDescription (String desc) {
+    public String transformDescription (String desc,String lang) {
         Validate.notEmpty(desc);
         String s = desc;
         for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
             s = s.replace(e.getKey(), e.getValue());
         }
+        if(s.indexOf("{")>-1) {
+            System.err.println("Incompleted translation for skill code ["+internalCode+"] / name ["+getTranslatedName("en")+"] in language ["+lang+"]");
+        }
         return s;
     }
     
     public void initPlaceholders(String desc, String trad) {
-        List<String> descSplit = Arrays.asList(desc.replaceAll("\\\\n", " ").split("\\s"));
-        List<String> tradSplit = Arrays.asList(trad.replaceAll("\\\\n", " ").split("\\s"));
+        List<String> descSplit = Arrays.asList(desc.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
+        List<String> tradSplit = Arrays.asList(trad.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
         List<String> comm = new ArrayList<>();
         comm.addAll(descSplit);
         comm.removeAll(tradSplit);
@@ -154,5 +158,9 @@ public class Skill {
     
     public String getTranslatedName(String lang) {
         return translatedNames.get(lang);
+    }
+
+    public boolean isUsed() {
+        return usedby.size() > 0;
     }
 }

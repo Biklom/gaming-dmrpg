@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 public class DataExtractor {
 
+    private static final Logger LOGGER = Logger.getLogger(DataExtractor.class.getName());
     private static final String SHEET_UNITS = "All monsters";
     private static final String SHEET_UNITS_NAMES = "Monster Names";
     private static final String SHEET_DUNGEONS = "Dungeons";
@@ -48,20 +49,22 @@ public class DataExtractor {
     private static final int DUNGEON_BONUS = 10;
     private final String inputDataPath;
     private final String outputDir;
-
+    private int maxDisplayedId;
     public static void main(String[] args) {
     }
 
-    public DataExtractor(String inputFile, String outputDirectory) {
+    public DataExtractor(String inputFile, String outputDirectory, int maxId) {
         inputDataPath = inputFile;
         outputDir = outputDirectory;
+        maxDisplayedId = maxId;
+        
     }
 
     public void generateData() {
         File file = new File(inputDataPath);
         try (Workbook workbook = WorkbookFactory.create(file)) {
             Map<String, Skill> skillsNames = generateSkillDesc(workbook.getSheet(SHEET_SKILLS_NAMES));
-            updateSkillsDescs(workbook.getSheet(SHEET_SKILLS_STATS),skillsNames);
+            updateSkillsDescs(workbook.getSheet(SHEET_SKILLS_STATS), skillsNames);
             Map<String, String[]> unitsNames = generateUnitsNames(workbook.getSheet(SHEET_UNITS_NAMES));
             Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS), unitsNames);
 
@@ -75,7 +78,7 @@ public class DataExtractor {
             dumpSkillsToFile(skillsNames, SKILL_TYPE.BASIC);
             dumpSkillsToFile(skillsNames, SKILL_TYPE.LEADER);
         } catch (InvalidFormatException | IOException ioe) {
-            Logger.getLogger(DataExtractor.class.getName()).log(Level.SEVERE, null, ioe);
+            LOGGER.log(Level.SEVERE, null, ioe);
         }
     }
 
@@ -89,6 +92,7 @@ public class DataExtractor {
         }
         return map;
     }
+
     public void updateSkillsDescs(Sheet sheet, Map<String, Skill> skills) {
         if (sheet != null) {
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -100,17 +104,17 @@ public class DataExtractor {
                 String skillCode = getCellStringValue(aRow.getCell(0));
                 String descvalues = getCellStringValue(aRow.getCell(2));
                 Skill sk = skills.get(skillCode);
-                System.out.println("skillCode => "+skillCode+ " : sk = "+sk);
-                if(sk != null) {
+                LOGGER.log(Level.FINE, "skillCode => {0} : sk = {1}", new Object[]{skillCode, sk});
+                if (sk != null) {
                     sk.initPlaceholders(sk.getPHDescription("en"), descvalues);
                 }
             }
-            
+
         }
     }
 
     public Map<String, String[]> generateUnitsNames(Sheet sheet) {
-        System.out.println("generateUnitsNames.in, sheet : " + sheet);
+        LOGGER.entering(getClass().getName(),"generateUnitsNames", sheet);
         Map<String, String[]> units = new HashMap<>();
         if (sheet != null) {
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -127,11 +131,11 @@ public class DataExtractor {
                     getUnitCellValue(unitRow.getCell(4)),
                     getUnitCellValue(unitRow.getCell(5))
                 };
-                System.out.println(unitCode + " <=> " + names);
+                
                 units.put(unitCode, names);
             }
         }
-        System.out.println("generateUnitsNames.out");
+        LOGGER.exiting(getClass().getName(),"generateUnitsNames", sheet);
         return units;
     }
 
@@ -147,7 +151,7 @@ public class DataExtractor {
                 continue;
             }
             Unit u = analyzeUnitRow(unitRow);
-            if( u != null) {
+            if (u != null) {
                 //updateNames(unitsNames, u);
                 List<Unit> eltList = units.getOrDefault(u.getElement(), new ArrayList<>());
                 units.putIfAbsent(u.getElement(), eltList);
@@ -159,7 +163,7 @@ public class DataExtractor {
 
     private void updateNames(Map<String, String[]> unitsNames, Unit u) {
         String[] names = unitsNames.get(u.getCodename());
-        System.out.println("updating names for [" + u.getCodename() + "]  with {" + names + "}");
+        LOGGER.log(Level.FINE, "updating names for [{0}]  with '{'{1}'}'", new Object[]{u.getCodename(), names});
         if (names != null) {
             u.addName("fr", names[0]);
             u.addName("en", names[1]);
@@ -174,8 +178,8 @@ public class DataExtractor {
     }
 
     public String getUnitCellValue(Cell c, boolean isFloat) {
-        String v="";
-        if(c != null) {
+        String v = "";
+        if (c != null) {
             switch (c.getCellType()) {
                 case Cell.CELL_TYPE_STRING:
                     v = c.getStringCellValue();
@@ -197,7 +201,7 @@ public class DataExtractor {
 
     public Unit analyzeUnitRow(Row unitRow) {
         String id = getUnitCellValue(unitRow.getCell(0));
-        if( StringUtils.isEmpty(id)) {
+        if (StringUtils.isEmpty(id)) {
             return null;
         }
         Unit u = new Unit();
@@ -252,8 +256,6 @@ public class DataExtractor {
         // de
         u.addName("de", getUnitCellValue(unitRow.getCell(24)));
 
-        
-
         return u;
     }
 
@@ -264,13 +266,17 @@ public class DataExtractor {
                     + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
                     + "\n\nreturn {\n");
             e.getValue().stream().forEach((u) -> {
-                sb.append(u.toString());
+                if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
+                    sb.append(u.toString());
+                } else {
+                    LOGGER.log(Level.WARNING, "Skipping unit #{0} : {1}", new Object[]{u.getBestiaryslot(), u.getCodename()});
+                }
             });
             sb.append("}");
             try {
                 FileUtils.writeStringToFile(new File(outputDir, "wikia_" + e.getKey() + ".lua"), sb.toString(), "UTF-8");
             } catch (IOException ex) {
-                Logger.getLogger(DataExtractor.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -301,7 +307,7 @@ public class DataExtractor {
         List<Dungeon> dungeons = new ArrayList<>();
         if (sheet != null) {
             Row r = sheet.getRow(0);
-            System.out.println("R(0) nb cell  : " + r.getLastCellNum());
+            LOGGER.log(Level.FINE, "R(0) nb cell  : {0}", r.getLastCellNum());
             Map<Integer, String> headerMap = extractHeaders(sheet.getRow(1));
             String mode = Dungeon.MODE_NORMAL;
             for (int i = 0; i <= sheet.getLastRowNum(); i++) {
@@ -394,7 +400,7 @@ public class DataExtractor {
                     aRow = sheet.getRow(i + 1);
                     aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
                     aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
-                    aSkill.setDescription( getCellStringValue(aRow.getCell(2)));
+                    aSkill.setDescription(getCellStringValue(aRow.getCell(2)));
                     aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
                     aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
                     aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));
@@ -433,8 +439,7 @@ public class DataExtractor {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_dungeons.lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
-            Logger.getLogger(DataExtractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -485,32 +490,33 @@ public class DataExtractor {
 
     private void ajustBasicSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills) {
         mapUnitByCode.values().stream().forEach((u) -> {
-            String s =  u.getCodeBasicSkill();
-            System.out.println("Basic skill : "+s);
+            String s = u.getCodeBasicSkill();
+
             if (StringUtils.isNotEmpty(s)) {
                 Skill sk = skills.get(s);
-                System.out.println("Basic skill Obj: "+sk);
+
                 if (sk != null) {
                     u.setWikiBasicSkill(sk.getTranslatedName("en"));
                     sk.addUsedby(u.getElementNCode());
                 } else {
-                    System.err.println("Unknown Basic skill : " + s + " for unit : " + u.getElementNCode());
+                    LOGGER.log(Level.WARNING, "Unknown Basic skill : {0} for unit : {1}", new Object[]{s, u.getElementNCode()});
                 }
             }
         });
     }
+
     private void ajustLeaderSkills(Map<String, Unit> mapUnitByCode, Map<String, Skill> skills) {
         mapUnitByCode.values().stream().forEach((u) -> {
             String s = u.getCodeLeaderSkill();
-            System.out.println("Leader skill : "+s);
+
             if (StringUtils.isNotEmpty(s)) {
                 Skill sk = skills.get(s);
-                System.out.println("Leader skill obj: "+sk);
+
                 if (sk != null) {
                     u.setWikiLeaderSkill(sk.getTranslatedName("en"));
                     sk.addUsedby(u.getElementNCode());
                 } else {
-                    System.err.println("Unknown Leader skill : " + s + " for unit : " + u.getElementNCode());
+                    LOGGER.log(Level.WARNING, "Unknown Leader skill : {0} for unit : {1}", new Object[]{s, u.getElementNCode()});
                 }
             }
         });
@@ -522,15 +528,18 @@ public class DataExtractor {
                 + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
                 + "\n\nreturn {\n");
         skills.values().stream().forEach((u) -> {
-            sb.append(u.toString());
+            if (u.isUsed()) {
+                sb.append(u.toString());
+            } else {
+                LOGGER.log(Level.WARNING, "Ignoring unused skill [{0}]", u.getInternalCode());
+            }
         });
         sb.append("}");
         try {
             FileUtils.writeStringToFile(new File(outputDir, "wikia_skills_" + StringUtils.capitalize(category.name().toLowerCase()) + ".lua"), sb.toString(), "UTF-8");
 
         } catch (IOException ex) {
-            Logger.getLogger(DataExtractor.class
-                    .getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 }

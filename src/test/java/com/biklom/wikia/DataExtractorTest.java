@@ -7,7 +7,8 @@ public class DataExtractorTest {
         String data = "C:\\workspaces\\test_dmrpg.xlsx";
         data = "C:\\workspaces\\Unit Showcase.xlsx";
         String output = "C:\\workspaces\\csv_wiki";
-        DataExtractor instance = new DataExtractor(data, output);
+        int maxUnit = 427;
+        DataExtractor instance = new DataExtractor(data, output,maxUnit);
         instance.generateData();
     }
 }
