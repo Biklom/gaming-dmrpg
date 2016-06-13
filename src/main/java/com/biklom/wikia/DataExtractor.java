@@ -528,10 +528,12 @@ public class DataExtractor {
                 + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
                 + "\n\nreturn {\n");
         skills.values().stream().forEach((u) -> {
-            if (u.isUsed()) {
-                sb.append(u.toString());
-            } else {
-                LOGGER.log(Level.WARNING, "Ignoring unused skill [{0}]", u.getInternalCode());
+            if(SKILL_TYPE.findType(u.getInternalCode()) == category) {
+                if (u.isUsed()) {
+                    sb.append(u.toString());
+                } else {
+                    LOGGER.log(Level.WARNING, "Ignoring unused skill [{0}]", u.getInternalCode());
+                }
             }
         });
         sb.append("}");
