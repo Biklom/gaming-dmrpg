@@ -1,4 +1,4 @@
-package com.biklom.wikia;
+package com.biklom.wikia.objects;
 
 import java.util.*;
 import org.apache.commons.lang3.*;
@@ -20,12 +20,20 @@ public class Dungeon {
     public static final String RED_2_LEVEL = "red2_level";
     public static final String BONUS = "bonus";
     public static final String BONUS_LEVEL = "bonus_level";
-
+    public static final String MODE = "mode";
+    
+    public static final String MODE_NORMAL = "normal";
+    public static final String MODE_ELITE = "elite";
+    
     public Dungeon() {
+        initData();
+    }
+    private void initData() {
         addData(BLUE_2, "");
         addData(BLUE_2_LEVEL, "");
         addData(RED_2, "");
         addData(RED_2_LEVEL, "");
+        addData(MODE, MODE_NORMAL);
     }
 
     private final Map<String, String> datas = new TreeMap<>();
@@ -40,12 +48,23 @@ public class Dungeon {
     }
 
     public String getCode() {
-        return new StringBuilder("ch")
+        StringBuilder sb = 
+         new StringBuilder("ch")
                 .append(getData(CHAPTER))
                 .append("_cp")
                 .append(getData(CAMPAIGN))
                 .append("_dg")
-                .append(getData(DUNGEON)).toString();
+                .append(getData(DUNGEON));
+        String mode = getData(MODE);
+        if( StringUtils.isNotEmpty(mode)) {
+            switch(mode) {
+                case MODE_NORMAL :
+                    break;
+                default:
+                    sb.append("_").append(mode);
+            }
+        }
+        return sb.toString();
     }
 
     @Override
