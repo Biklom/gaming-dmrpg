@@ -1,28 +1,35 @@
 package com.biklom.wikia.objects;
 
 import java.util.*;
-import org.apache.commons.lang3.Validate;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Skill {
     private static final Logger LOGGER = LoggerFactory.getLogger(Skill.class);
-    /** Match the ID column from "Skill Names" tab. */
+    
+    @Getter
+    @Setter
     private String internalCode; 
+    
     /** Match the english name of skill. */
+    @Getter
+    @Setter
     private String name;
-    /** Match technical description with placeholders. */
+
+    @Getter
+    @Setter
     private String description;
-    /** translated descriptions without placeholders replacement. Languages code in lowercase. */
-    private final Map<String, String> translatedDescWithPH = new TreeMap<>();
-    /** translated descriptions with placeholders replacement. Languages code in lowercase. */
-    private Map<String, String> translatedDesc = new TreeMap<>();
+
+    /** translated descriptions. Languages code in lowercase. */
+    private final Map<String, String> translatedDesc = new TreeMap<>();
+
     /** Names in supported languages. Languages code in lowercase. */
-    private Map<String, String> translatedNames = new TreeMap<>();
+    private final Map<String, String> translatedNames = new TreeMap<>();
+
     /** List of units using this skill. */
-    private Set<String> usedby = new TreeSet<>();
-    /** map of placeholders and associated values. */
-    private Map<String,String> placeholders2Values = new HashMap<>();
+    private final Set<String> usedby = new TreeSet<>();
     
     
     
@@ -31,8 +38,7 @@ public class Skill {
         StringBuilder sb = new StringBuilder();
         sb.append("\t").append(makeCode()).append(" = {\n");
         sb.append("\t\tenglishname = \"").append(getTranslatedName("en")).append("\",\n");
-        sb.append("\t\tdescription = \"").append(transformDescription (translatedDescWithPH.get("en"),"en")).append("\",\n");
-        sb.append("\t\ttechnical_description = \"").append(description).append("\",\n");
+        sb.append("\t\tdescription = \"").append(getTranslatedDescription("en")).append("\",\n");
         sb.append("\t\tusedby = {\n");
         usedby.stream().forEach((u) -> {
             sb.append("\t\t\t\"").append(u).append("\",\n");
@@ -44,8 +50,8 @@ public class Skill {
         });
         sb.append("\t\t},\n");
         sb.append("\t\tdescriptions = {\n");
-        translatedDescWithPH.entrySet().stream().forEach((e) -> {
-            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(transformDescription (e.getValue(),e.getKey())).append("\",\n");
+        translatedDesc.entrySet().stream().forEach((e) -> {
+            sb.append("\t\t\t").append(e.getKey()).append("=\"").append(e.getValue()).append("\",\n");
         });
         sb.append("\t\t},\n");
         sb.append("\t},\n");
@@ -55,100 +61,6 @@ public class Skill {
     private String makeCode() {
         return getTranslatedName("en").replaceAll("[' \\-]", "_").replaceAll("__+", "_");
     }
-    public void addPHDescription (String lang, String desc) {
-        translatedDescWithPH.put(lang.toLowerCase(),desc);
-    }
-    public String getPHDescription(String lang) {
-        return translatedDescWithPH.get(lang.toLowerCase());
-    }
-    
-    public void addAndTransformDescription (String lang, String desc) {
-        Validate.notEmpty(desc);
-        String s = transformDescription(desc,lang);
-        translatedDesc.put( lang, s );
-    }
-    public String transformDescription (String desc,String lang) {
-        Validate.notEmpty(desc);
-        String s = desc;
-        for(Map.Entry<String,String> e :  placeholders2Values.entrySet()) {
-            s = s.replace(e.getKey(), e.getValue());
-        }
-        if(s.contains("{")) {
-            LOGGER.warn("Incomplete translation for skill code [{}] / name [{}] in language [{}]",internalCode,getTranslatedName("en"),lang);
-            LOGGER.debug(desc);
-            LOGGER.debug(s);
-            List<String> tradSplit = splitStringAsArray(s);
-            tradSplit.stream().forEach(k -> {
-                if(k.startsWith("{")) {
-                    if(!placeholders2Values.containsKey(k)) {
-                        LOGGER.warn("missing key : {}",k);
-                    }
-                }
-            });
-
-        }
-        return s;
-    }
-
-    private static List<String> splitStringAsArray(String s) {
-        return Arrays.asList(s.replaceAll("\\\\n|\\.|\\,", " ").split("\\s"));
-    }
-    
-    public void initPlaceholders(String desc, String trad) {
-        List<String> descSplit = splitStringAsArray(desc);
-        List<String> tradSplit = splitStringAsArray(trad);
-        List<String> comm = new ArrayList<>();
-        comm.addAll(descSplit);
-        comm.removeAll(tradSplit);
-        List<String> tok = new ArrayList<>();
-        tok.addAll(tradSplit);
-        tok.removeAll(descSplit);
-        for (int i = Math.min(tok.size() , comm.size()); i>0;i--) {
-            placeholders2Values.put(comm.get(i - 1), tok.get(i - 1));
-        }
-    }
-
-    public String getInternalCode() {
-        return internalCode;
-    }
-
-    public void setInternalCode(String internalCode) {
-        this.internalCode = internalCode;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Map<String, String> getTranslatedDesc() {
-        return translatedDesc;
-    }
-
-    public void setTranslatedDesc(Map<String, String> translatedDesc) {
-        this.translatedDesc = translatedDesc;
-    }
-
-    public Map<String, String> getTranslatedNames() {
-        return translatedNames;
-    }
-
-    public void setTranslatedNames(Map<String, String> translatedNames) {
-        this.translatedNames = translatedNames;
-    }
-    
-    
     
     public Set<String> getUsedby() {
         return usedby;
@@ -156,14 +68,6 @@ public class Skill {
 
     public void addUsedby(String unit) {
         usedby.add(unit);
-    }
-
-    public Map<String,String> getPlaceholders2Values() {
-        return placeholders2Values;
-    }
-
-    public void setPlaceholders2Values(Map<String,String> placeholders2Values) {
-        this.placeholders2Values = placeholders2Values;
     }
     
     public void addName(String lang, String name) {
@@ -176,5 +80,13 @@ public class Skill {
 
     public boolean isUsed() {
         return usedby.size() > 0;
+    }
+
+    public void addDescription(String lang, String desc) {
+        translatedDesc.put(lang.toLowerCase(),desc);
+    }
+
+    private String getTranslatedDescription(String lang) {
+        return translatedDesc.get(lang);
     }
 }

@@ -22,51 +22,28 @@ public class DataExtractor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataExtractor.class);
     private static final String SHEET_UNITS = "All monsters";
-    private static final String SHEET_UNITS_NAMES = "Monster Names";
     private static final String SHEET_DUNGEONS = "Dungeons";
-
-    private static final String SHEET_SKILLS_NAMES = "Skill Names";
     private static final String SHEET_SKILLS_STATS = "Skills Stats";
-    private static final String SHEET_SKILLS_BASIC = "Skills";
-    private static final String SHEET_SKILLS_LEADER = "Leader Skills";
-    private static final String MATERIAL_1 = "material1";
-    private static final String MATERIAL_2 = "material2";
-    private static final String MATERIAL_3 = "material3";
-    private static final String MORPHS_INTO = "morphsinto";
-    private static final String MORPHS_FROM = "morphsfrom";
-    /**
-     * Chapter Campaign Dungeon Name Food Blue1 Blue2 Red1 Red2 Bonus
-     */
-    private static final int DUNGEON_CHAPTER = 1;
-    private static final int DUNGEON_CAMPAIGN = 2;
-    private static final int DUNGEON_DUNGEON = 3;
-    private static final int DUNGEON_NAME = 4;
-    private static final int DUNGEON_FOOD = 5;
-    private static final int DUNGEON_BLUE_1 = 6;
-    private static final int DUNGEON_BLUE_2 = 7;
-    private static final int DUNGEON_RED_1 = 8;
-    private static final int DUNGEON_RED_2 = 9;
-    private static final int DUNGEON_BONUS = 10;
+
     private final String inputDataPath;
     private final String outputDir;
-    private int maxDisplayedId;
+    private final Set<String> excludeExport = new TreeSet<>();
     public static void main(String[] args) {
     }
 
-    public DataExtractor(String inputFile, String outputDirectory, int maxId) {
+    public DataExtractor(String inputFile, String outputDirectory, Collection<String> excludedFromExport) {
         inputDataPath = inputFile;
         outputDir = outputDirectory;
-        maxDisplayedId = maxId;
-        
+        if(excludedFromExport != null) {
+            excludeExport.addAll(excludedFromExport);
+        }
     }
 
     public void generateData() {
         File file = new File(inputDataPath);
         try (Workbook workbook = WorkbookFactory.create(file)) {
-            Map<String, Skill> skillsNames = generateSkillDesc(workbook.getSheet(SHEET_SKILLS_NAMES));
-            updateSkillsDescs(workbook.getSheet(SHEET_SKILLS_STATS), skillsNames);
-            Map<String, String[]> unitsNames = generateUnitsNames(workbook.getSheet(SHEET_UNITS_NAMES));
-            Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS), unitsNames);
+            Map<String, Skill> skillsNames = generateSkillDesc(workbook.getSheet(SHEET_SKILLS_STATS));
+            Map<String, List<Unit>> units = generateUnitsData(workbook.getSheet(SHEET_UNITS));
 
             Map<String, Unit> mapUnitByCode = getMapUnitByCodeOrENName(units);
             ajustAllUnitsCrossing(mapUnitByCode);
@@ -102,60 +79,16 @@ public class DataExtractor {
     }
     public Map<String, Unit> getMapUnitByCodeOrENName(Map<String, List<Unit>> units) {
         Map<String, Unit> map = new HashMap<>();
-        for (List<Unit> l : units.values()) {
-            for (Unit u : l) {
+        units.values().stream().forEach((l) -> {
+            l.stream().forEach((u) -> {
                 map.put(u.getCodename(), u);
                 map.put(u.getEnglishName(), u);
-            }
-        }
+            });
+        });
         return map;
     }
-
-    public void updateSkillsDescs(Sheet sheet, Map<String, Skill> skills) {
-        if (sheet != null) {
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row aRow = sheet.getRow(i);
-
-                if (aRow == null) {
-                    continue;
-                }
-                String skillCode = getCellStringValue(aRow.getCell(0));
-                String descvalues = getCellStringValue(aRow.getCell(2));
-                Skill sk = skills.get(skillCode);
-                LOGGER.debug("skillCode => {} : sk = {}", skillCode, sk);
-                if (sk != null) {
-                    sk.initPlaceholders(sk.getPHDescription("en"), descvalues);
-                }
-            }
-
-        }
-    }
-
-    public Map<String, String[]> generateUnitsNames(Sheet sheet) {
-        Map<String, String[]> units = new HashMap<>();
-        if (sheet != null) {
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row unitRow = sheet.getRow(i);
-
-                if (unitRow == null) {
-                    continue;
-                }
-                String unitCode = getUnitCellValue(unitRow.getCell(0));
-                String[] names = new String[]{
-                    getUnitCellValue(unitRow.getCell(1)),
-                    getUnitCellValue(unitRow.getCell(2)),
-                    getUnitCellValue(unitRow.getCell(3)),
-                    getUnitCellValue(unitRow.getCell(4)),
-                    getUnitCellValue(unitRow.getCell(5))
-                };
-                
-                units.put(unitCode, names);
-            }
-        }
-        return units;
-    }
-
-    public Map<String, List<Unit>> generateUnitsData(Sheet sheet, Map<String, String[]> unitsNames) {
+    
+    public Map<String, List<Unit>> generateUnitsData(Sheet sheet) {
         Map<String, List<Unit>> units = new HashMap<>();
         if (sheet == null) {
             return units;
@@ -175,18 +108,6 @@ public class DataExtractor {
             }
         }
         return units;
-    }
-
-    private void updateNames(Map<String, String[]> unitsNames, Unit u) {
-        String[] names = unitsNames.get(u.getCodename());
-        LOGGER.debug("updating names for [{}]  with '{'{}'}'", u.getCodename(), names);
-        if (names != null) {
-            u.addName("fr", names[0]);
-            u.addName("en", names[1]);
-            u.addName("it", names[2]);
-            u.addName("es", names[3]);
-            u.addName("de", names[4]);
-        }
     }
 
     public String getUnitCellValue(Cell c) {
@@ -282,10 +203,10 @@ public class DataExtractor {
                     + "http://dungeon-monsters-rpg.wikia.com/wiki/How_to_contribute\n\n--]]\n"
                     + "\n\nreturn {\n");
             e.getValue().stream().forEach((u) -> {
-                if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
-                    sb.append(u.toString());
+                if(excludeExport.contains(u.getBestiaryslot())) {
+                    LOGGER.warn( "Skipping unit #{} [ {} ] due to NDA restrictions", u.getBestiaryslot(), u.getCodename());
                 } else {
-                    LOGGER.info( "Skipping unit #{} : {}", u.getBestiaryslot(), u.getCodename());
+                    sb.append(u.toString());
                 }
             });
             sb.append("}");
@@ -402,26 +323,17 @@ public class DataExtractor {
         Map<String, Skill> skills = new TreeMap<>();
 
         if (sheet != null) {
-            for (int i = 1; i < sheet.getLastRowNum() - 2; i += 2) {
+            String[] languages= {"en","fr","it","de","es"};
+            for (int i = 1; i <= sheet.getLastRowNum() ; i ++) {
                 Row aRow = sheet.getRow(i);
                 Skill aSkill = new Skill();
                 aSkill.setInternalCode(getCellStringValue(aRow.getCell(0)));
-                String s = getCellStringValue(aRow.getCell(1));
-                if (StringUtils.isNotEmpty(s)) {
-                    aSkill.addName("fr", getCellStringValue(aRow.getCell(1)));
-                    aSkill.addName("en", getCellStringValue(aRow.getCell(2)));
-                    aSkill.addName("it", getCellStringValue(aRow.getCell(3)));
-                    aSkill.addName("es", getCellStringValue(aRow.getCell(4)));
-                    aSkill.addName("de", getCellStringValue(aRow.getCell(5)));
-                    aRow = sheet.getRow(i + 1);
-                    aSkill.addPHDescription("fr", getCellStringValue(aRow.getCell(1)));
-                    aSkill.addPHDescription("en", getCellStringValue(aRow.getCell(2)));
-                    aSkill.setDescription(getCellStringValue(aRow.getCell(2)));
-                    aSkill.addPHDescription("it", getCellStringValue(aRow.getCell(3)));
-                    aSkill.addPHDescription("es", getCellStringValue(aRow.getCell(4)));
-                    aSkill.addPHDescription("de", getCellStringValue(aRow.getCell(5)));
-                    skills.put(aSkill.getInternalCode(), aSkill);
+                int idxCol = 1;
+                for(String lg : languages) {
+                    aSkill.addName(lg, getCellStringValue(aRow.getCell(idxCol++)));
+                    aSkill.addDescription(lg, getCellStringValue(aRow.getCell(idxCol++)));
                 }
+                skills.put(aSkill.getInternalCode(), aSkill);
             }
         }
         return skills;
@@ -513,7 +425,9 @@ public class DataExtractor {
 
                 if (sk != null) {
                     u.setWikiBasicSkill(sk.getTranslatedName("en"));
-                    if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
+                    if(excludeExport.contains(u.getBestiaryslot())) {
+                        LOGGER.warn( "Umapped Basic skill : {} for unit : {} due to NDA restrictions", s, u.getElementNCode());
+                    } else {
                         sk.addUsedby(u.getElementNCode());
                     }
                 } else {
@@ -532,7 +446,9 @@ public class DataExtractor {
 
                 if (sk != null) {
                     u.setWikiLeaderSkill(sk.getTranslatedName("en"));
-                    if(Integer.valueOf(u.getBestiaryslot())<= maxDisplayedId) {
+                    if(excludeExport.contains(u.getBestiaryslot())) {
+                        LOGGER.warn( "Umapped Leader skill : {} for unit : {} due to NDA restrictions", s, u.getElementNCode());
+                    } else {
                         sk.addUsedby(u.getElementNCode());
                     }
                 } else {
