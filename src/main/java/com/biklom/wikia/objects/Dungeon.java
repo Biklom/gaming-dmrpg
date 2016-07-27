@@ -24,6 +24,9 @@ public class Dungeon {
     
     public static final String MODE_NORMAL = "normal";
     public static final String MODE_ELITE = "elite";
+
+
+    private final Map<String, String> datas = new TreeMap<>();
     
     public Dungeon() {
         initData();
@@ -36,7 +39,6 @@ public class Dungeon {
         addData(MODE, MODE_NORMAL);
     }
 
-    private final Map<String, String> datas = new TreeMap<>();
 
     public void addData(String name, String value) {
         String v = StringUtils.defaultIfEmpty(value, "");

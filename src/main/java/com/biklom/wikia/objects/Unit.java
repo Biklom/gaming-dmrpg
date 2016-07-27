@@ -96,34 +96,6 @@ public class Unit {
                 .toString());
     }
 
-    /**
-     * <pre>
-     * AngelFire={                         -- normalized internal Manacube code used as identifier, all non-alphabetic character should be replaced by "_"
-     * codename="AngelFire",           -- internal Manacube code
-     * nameen="Ignithiel",             -- english name
-     * namefr="Ignithiel",             -- french name
-     * nameit="Ignitiele",             -- italian name
-     * namees="Igniciel",              -- spanish name
-     * namede="Flammiel",              -- german name
-     * maxlevel="40",                  -- maximum level
-     * maxxp="80000",                  -- total xp need to reach max level
-     * mindp="364",                    -- damage when level 1 without stars
-     * maxdp="672",                    -- damage when level max without stars
-     * minhp="522",                    -- health when level 1 without stars
-     * maxhp="1138",                   -- health when level max without stars
-     * initiative="4,25",              -- initiative, will be sanitized to display a dot a decimal separator.
-     * skillcharge="5",                -- skill charge
-     * element="fire",                 -- element
-     * rarity="rare",                  -- rarity, will be translate into C, C+, U, U+, R, R+, UR, UR+, L
-     * power="39",                     -- power without any stars
-     * morphsinto="ArchangelFire",     -- unit code into which it will morph if possible
-     * skillname="Breath Of Fire",     -- unit basic skill, link with description will be automatic
-     * leaderskillname="",             -- unit leader skill once metamorphosed, link with description will be automatic
-     * bestiaryslot=""                 -- numeric id in the bestiary (unit number)
-     * },</pre
-     *
-     * @return
-     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

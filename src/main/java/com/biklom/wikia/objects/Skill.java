@@ -9,18 +9,11 @@ import org.slf4j.LoggerFactory;
 public class Skill {
     private static final Logger LOGGER = LoggerFactory.getLogger(Skill.class);
     
-    @Getter
-    @Setter
-    private String internalCode; 
     
     /** Match the english name of skill. */
-    @Getter
-    @Setter
-    private String name;
-
-    @Getter
-    @Setter
-    private String description;
+    @Getter @Setter private String name;
+    @Getter @Setter private String description;
+    @Getter @Setter private String internalCode; 
 
     /** translated descriptions. Languages code in lowercase. */
     private final Map<String, String> translatedDesc = new TreeMap<>();
@@ -29,7 +22,7 @@ public class Skill {
     private final Map<String, String> translatedNames = new TreeMap<>();
 
     /** List of units using this skill. */
-    private final Set<String> usedby = new TreeSet<>();
+    @Getter private final Set<String> usedby = new TreeSet<>();
     
     
     
@@ -61,10 +54,6 @@ public class Skill {
     private String makeCode() {
         return getTranslatedName("en").replaceAll("[' \\-]", "_").replaceAll("__+", "_");
     }
-    
-    public Set<String> getUsedby() {
-        return usedby;
-    }
 
     public void addUsedby(String unit) {
         usedby.add(unit);
@@ -86,7 +75,7 @@ public class Skill {
         translatedDesc.put(lang.toLowerCase(),desc);
     }
 
-    private String getTranslatedDescription(String lang) {
+    public String getTranslatedDescription(String lang) {
         return translatedDesc.get(lang);
     }
 }

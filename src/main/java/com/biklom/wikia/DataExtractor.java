@@ -63,17 +63,14 @@ public class DataExtractor {
     public List<Skill> sortSkillsByEnName(Map<String, Skill> skillsMap) {
         List<Skill> skills = new ArrayList<>();
         skills.addAll(skillsMap.values());
-        Collections.sort(skills, new Comparator<Skill>() {
-            @Override
-            public int compare(Skill o1, Skill o2) {
-                if(o1 == null) {
-                    return -1;
-                }
-                if(o2 == null) {
-                    return 1;
-                }
-                return StringUtils.defaultIfEmpty(o1.getTranslatedName("en"),"").compareToIgnoreCase(StringUtils.defaultIfEmpty(o2.getTranslatedName("en"),""));
+        Collections.sort(skills, (Skill o1, Skill o2) -> {
+            if(o1 == null) {
+                return -1;
             }
+            if(o2 == null) {
+                return 1;
+            }
+            return StringUtils.defaultIfEmpty(o1.getTranslatedName("en"),"").compareToIgnoreCase(StringUtils.defaultIfEmpty(o2.getTranslatedName("en"),""));
         });
         return skills;
     }
