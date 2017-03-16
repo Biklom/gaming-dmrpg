@@ -8,7 +8,8 @@ It works as follow :
 - generate some files on disk to copy later on wikia to operate the real update.
 
 
-TODO : 
-- use the REST API of wikia to publish automatically the new content
+TODO :
+- use the REST API of wiki hoster to publish automatically the new content
+- optimize uploading code to prevent lonnnnnng updates.
 - clean the code to create a real application
 - share it to the community.
