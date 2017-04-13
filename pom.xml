@@ -5,13 +5,24 @@
     <artifactId>wikia</artifactId>
     <version>trunk-SNAPSHOT</version>
     <packaging>jar</packaging>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
     <dependencies>
-        
-        <dependency>    
-            <groupId>org.wikipedia</groupId>
+        <dependency>
+            <groupId>com.github.spring-projects</groupId>
+            <artifactId>spring-batch-extensions</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>        
+        <dependency>
+            <groupId>com.github.MER-C</groupId>
             <artifactId>wiki-java</artifactId>
-            <version>0.32-SNAPSHOT</version>
-        </dependency>
+            <version>0.32</version>
+        </dependency>    
         
         <dependency>
             <groupId>org.apache.poi</groupId>
